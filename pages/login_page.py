@@ -1,48 +1,51 @@
-from pages.base_page import BasePage
+from playwright.sync_api import Page, expect
 
 
-class LoginPage(BasePage):
-    USERNAME_INPUT = "input#email, input[name='email'], input[type='email']"
-    PASSWORD_INPUT = "input#password, input[name='password'], input[type='password']"
-    SUBMIT_BUTTON = "button[type='submit'], button:has-text('Sign in'), button:has-text('Entrar')"
-    FORGOT_PASSWORD_LINK = "a:has-text('Forgot password'), a:has-text('Esqueci')"
-    ERROR_MESSAGE = "[role='alert'], .error, .error-message, .alert-danger"
+class LoginPage:
+    ERROR_MESSAGE = "[role='alert'], .error, .alert, text=/erro|error|inv[áa]lido|invalid/i"
+    USERNAME_INPUT = "input[name='username'], input[type='email'], input#username"
+    PASSWORD_INPUT = "input[name='password'], input[type='password'], input#password"
+    SUBMIT_BUTTON = "button[type='submit'], button:has-text('Entrar'), button:has-text('Sign in')"
+    FORGOT_PASSWORD_LINK = "a:has-text('Esqueci'), a:has-text('Forgot password')"
 
-    def navigate_to_login(self, base_url):
-        self.navigate(base_url, wait_until="domcontentloaded")
+    def __init__(self, page: Page):
+        self.page = page
 
-    def username_field(self):
-        return self.page.locator(self.USERNAME_INPUT).first
+    def navigate_to_login(self, base_url: str) -> None:
+        self.page.goto(base_url, wait_until="domcontentloaded")
 
-    def password_field(self):
-        return self.page.locator(self.PASSWORD_INPUT).first
+    def fill_username(self, username: str) -> None:
+        self.page.locator(self.USERNAME_INPUT).first.fill(username)
 
-    def submit_button(self):
-        return self.page.locator(self.SUBMIT_BUTTON).first
+    def fill_password(self, password: str) -> None:
+        self.page.locator(self.PASSWORD_INPUT).first.fill(password)
 
-    def forgot_password_link(self):
-        return self.page.locator(self.FORGOT_PASSWORD_LINK).first
+    def click_submit(self) -> None:
+        self.page.locator(self.SUBMIT_BUTTON).first.click()
 
-    def error_message(self):
-        return self.page.locator(self.ERROR_MESSAGE).first
-
-    def fill_username(self, value):
-        self.fill(self.username_field(), value)
-
-    def fill_password(self, value):
-        self.fill(self.password_field(), value)
-
-    def click_submit(self):
-        self.click(self.submit_button())
-
-    def perform_login(self, username, password):
+    def perform_login(self, username: str, password: str) -> None:
         self.fill_username(username)
         self.fill_password(password)
         self.click_submit()
 
-    def is_error_visible(self, timeout=5000):
+    def has_visible_error(self) -> bool:
+        locator = self.page.locator(self.ERROR_MESSAGE)
         try:
-            self.wait_visible(self.error_message(), timeout=timeout)
-            return True
+            return locator.first.is_visible()
         except Exception:
             return False
+
+    def is_error_visible(self) -> bool:
+        return self.has_visible_error()
+
+    def forgot_password_link_visible(self) -> bool:
+        locator = self.page.locator(self.FORGOT_PASSWORD_LINK)
+        try:
+            return locator.first.is_visible()
+        except Exception:
+            return False
+
+    def assert_loaded(self) -> None:
+        expect(self.page.locator(self.USERNAME_INPUT).first).to_be_visible()
+        expect(self.page.locator(self.PASSWORD_INPUT).first).to_be_visible()
+        expect(self.page.locator(self.SUBMIT_BUTTON).first).to_be_visible()
