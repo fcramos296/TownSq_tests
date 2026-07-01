@@ -32,14 +32,31 @@ townsq_qa_tests/
 ├── .env.example
 └── setup.bat
 ```
+## Pré requisitos
+
+- Python 3.11+
+- Máquina Windows (caso queira utilizar o setup.bat)
 
 ## Instalacao
 
-1. Clone ou baixe o projeto.
-2. Execute o `setup.bat` (Windows) ou configure manualmente:
+Clone ou baixe o repositório e execute o arquivo `setup.bat` na raiz do projeto.
+
+O script realiza automaticamente as seguintes etapas:
+
+- Solicita um e-mail válido para os testes.
+- Solicita uma senha válida para os testes.
+- Cria o arquivo `.env` na raiz do projeto.
+- Cria a virtualenv `.venv`.
+- Instala as dependências definidas no `requirements.txt`.
+- Instala `pytest`, `playwright` e `pytest-playwright`, se necessário.
+- Instala `Allure`.
+- Instala os navegadores usados pelo Playwright.
+- Executa os testes com `pytest`.
+- Gera o report do Allure e o exibe ao final da execução.
 
 ```bash
 python -m venv .venv
+.venv\Scripts\activate.bat
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m playwright install chromium
 ```
@@ -61,8 +78,8 @@ python -m venv .venv
 # Smoke tests
 .venv\Scripts\python -m pytest -m smoke
 
-# Com relatorio HTML
-.venv\Scripts\python -m pytest --html=reports/report.html --self-contained-html
+# Com relatorio do Allure
+.venv\Scripts\python -m pytest allure generate allure-results -o allure-report --clean
 ```
 
 ## Variaveis de Ambiente
@@ -75,6 +92,6 @@ python -m venv .venv
 
 ## Observacoes
 
-- Os seletores em `pages/login_page.py` utilizam estrategias multi-criterio (fallbacks) para campos de e-mail, senha e botao. Ajuste-os conforme o DOM real da pagina.
-- Testes de login com credenciais validas sao pulados automaticamente se `.env` nao estiver preenchido.
-- Screenshots de falha sao salvos automaticamente em `reports/screenshots/`.
+O arquivo setup.bat foi preparado para ambiente Windows.
+O Python deve estar previamente instalado na máquina.
+Caso o PowerShell bloqueie scripts, prefira executar o setup.bat pelo Prompt de Comando.
