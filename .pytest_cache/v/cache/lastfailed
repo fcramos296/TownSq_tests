@@ -1,10 +1,4 @@
 {
-  "tests/e2e/test_login_e2e.py::TestLoginFlow::test_successful_login": true,
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_invalid_credentials_shows_error": true,
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_wrong_credentials_shows_error": true,
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_successful_login_redirects_away_from_login": true,
-  "tests/e2e/test_login_e2e.py::TestLoginFlow::test_invalid_credentials_shows_error": true,
-  "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_first_visit_shows_no_global_error[chromium]": true,
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_first_visit_shows_no_global_error": true,
-  "tests/api/test_login_api.py::TestLoginAPI": true
+  "tests/e2e/test_login_e2e.py::TestLoginFlow::test_successful_login": true
 }

@@ -1,16 +1,7 @@
 [
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_api_rejects_invalid_credentials",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_api_returns_expected_structure",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_endpoint_options",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_endpoint_post_empty_payload",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_endpoint_post_invalid_payload",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_endpoint_post_valid_credentials",
-  "tests/api/test_login_api.py::TestLoginAPI::test_login_page_status_code",
   "tests/e2e/test_login_e2e.py::TestLoginFlow::test_invalid_credentials_shows_error",
   "tests/e2e/test_login_e2e.py::TestLoginFlow::test_successful_login",
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_first_visit_shows_no_global_error",
-  "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_first_visit_shows_no_global_error[chromium]",
-  "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_forgot_password_link_is_present",
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_login_page_loads",
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_login_page_title",
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_password_field_is_visible",
@@ -18,9 +9,5 @@
   "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_username_field_is_visible",
   "tests/e2e/test_login_e2e.py::TestLoginValidation::test_empty_credentials_shows_error",
   "tests/e2e/test_login_e2e.py::TestLoginValidation::test_forgot_password_link_is_present",
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_invalid_credentials_shows_error",
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_invalid_email_format",
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_invalid_email_format_is_rejected",
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_successful_login_redirects_away_from_login",
-  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_wrong_credentials_shows_error"
+  "tests/e2e/test_login_e2e.py::TestLoginValidation::test_invalid_email_format"
 ]
