@@ -2,174 +2,144 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-set "ALLURE_RESULTS=allure-results"
-set "ALLURE_REPORT=allure-report"
 set "VENV_DIR=.venv"
 set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
 set "VENV_ACTIVATE_BAT=%VENV_DIR%\Scripts\activate.bat"
 set "VENV_ACTIVATE_PS1=%VENV_DIR%\Scripts\Activate.ps1"
+set "ALLURE_RESULTS=allure-results"
+set "ALLURE_REPORT=allure-report"
 
-echo ==============================
-echo Townsq QA - Setup de Testes
-echo ==============================
-
-echo.
-echo ==============================
-echo Criando arquivo .env
-echo ==============================
-if not exist .env (
-    set /p EMAIL="Digite um e-mail para teste: "
-    set /p PASS="Digite uma senha para teste: "
-    (
-        echo BASE_URL=https://townsq.octadesk.com/login
-        echo USERNAME=!EMAIL!
-        echo PASSWORD=!PASS!
-    ) > .env
-    if errorlevel 1 (
-        echo Falha ao criar o arquivo .env.
+if not exist ".env" (
+    if exist ".env.example" (
+        copy /Y ".env.example" ".env" >nul
+        echo .env created from .env.example.
+    ) else (
+        echo ERRO: .env.example not found.
         pause
         exit /b 1
     )
-    echo .env criado com sucesso.
-) else (
-    echo .env ja existe. Mantendo configuracao atual.
 )
 
 echo.
-echo ==============================
-echo Criando ambiente virtual
-echo ==============================
+echo Informe credenciais VALIDAS para execucao dos testes.
+echo Elas serao gravadas no arquivo .env local.
+echo.
+
+set /p TEST_USERNAME=USERNAME de teste: 
+if "%TEST_USERNAME%"=="" (
+    echo ERRO: USERNAME nao pode ficar vazio.
+    pause
+    exit /b 1
+)
+
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "$p = Read-Host 'PASSWORD de teste' -AsSecureString; $b=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($p); try { [Runtime.InteropServices.Marshal]::PtrToStringAuto($b) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b) }"`) do set "TEST_PASSWORD=%%i"
+if "%TEST_PASSWORD%"=="" (
+    echo ERRO: PASSWORD nao pode ficar vazia.
+    pause
+    exit /b 1
+)
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$envPath = '.env';" ^
+    "$lines = Get-Content $envPath -ErrorAction SilentlyContinue;" ^
+    "if (-not $lines) { $lines = @() }" ^
+    "$map = [ordered]@{};" ^
+    "foreach ($line in $lines) { if ($line -match '^[A-Za-z_][A-Za-z0-9_]*=') { $k,$v = $line -split '=',2; $map[$k]=$v } else { $map[$line]=$null } }" ^
+    "$map['USERNAME'] = '%TEST_USERNAME%';" ^
+    "$map['PASSWORD'] = '%TEST_PASSWORD%';" ^
+    "$out = New-Object System.Collections.Generic.List[string];" ^
+    "foreach ($entry in $map.GetEnumerator()) { if ($entry.Value -eq $null) { if ($entry.Key -ne '') { $out.Add($entry.Key) } } else { $out.Add(('{0}={1}' -f $entry.Key, $entry.Value)) } }" ^
+    "Set-Content -Path $envPath -Value $out -Encoding UTF8"
+if errorlevel 1 (
+    echo ERRO: falha ao atualizar o arquivo .env com as credenciais.
+    pause
+    exit /b 1
+)
+
 if not exist "%VENV_PYTHON%" (
+    echo Creating virtual environment...
     python -m venv %VENV_DIR%
+)
+
+if not exist "%VENV_PYTHON%" (
+    echo ERRO: could not create virtual environment.
+    pause
+    exit /b 1
+)
+
+echo Activating virtual environment...
+set "TERM_TYPE=cmd"
+if defined PSModulePath set "TERM_TYPE=powershell"
+
+if /i "!TERM_TYPE!"=="powershell" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "& '%VENV_ACTIVATE_PS1%'; python -V"
     if errorlevel 1 (
-        echo Falha ao criar a virtualenv.
+        echo ERRO: failed to activate .venv in PowerShell.
+        pause
+        exit /b 1
+    )
+) else (
+    call "%VENV_ACTIVATE_BAT%"
+    if errorlevel 1 (
+        echo ERRO: failed to activate .venv in Command Prompt.
         pause
         exit /b 1
     )
 )
-if not exist "%VENV_PYTHON%" (
-    echo Python da virtualenv nao encontrado em %VENV_PYTHON%
-    pause
-    exit /b 1
-)
 
-echo.
-echo ==============================
-echo Ativando ambiente virtual
-echo ==============================
-call "%VENV_ACTIVATE_BAT%" >nul 2>nul
-if errorlevel 1 (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "& '%VENV_ACTIVATE_PS1%'" >nul 2>nul
-)
-if errorlevel 1 (
-    echo Falha ao ativar o ambiente virtual.
-    pause
-    exit /b 1
-)
-
-echo Ambiente virtual ativado: %VIRTUAL_ENV%
-
-echo.
-echo ==============================
-echo Instalando dependencias
-echo ==============================
+echo Installing dependencies...
 python -m pip install --upgrade pip
-if errorlevel 1 (
-    echo Falha ao atualizar pip.
-    pause
-    exit /b 1
-)
 python -m pip install -r requirements.txt
 if errorlevel 1 (
-    echo Falha ao instalar dependencias do requirements.txt.
+    echo ERRO: failed to install dependencies.
     pause
     exit /b 1
 )
 
-python -m pip show pytest >nul 2>nul
-if errorlevel 1 python -m pip install pytest
-python -m pip show playwright >nul 2>nul
-if errorlevel 1 python -m pip install playwright
-python -m pip show pytest-playwright >nul 2>nul
-if errorlevel 1 python -m pip install pytest-playwright
-python -m pip show allure-pytest >nul 2>nul
-if errorlevel 1 python -m pip install allure-pytest
-python -m pip show pytest-html >nul 2>nul
-if errorlevel 1 python -m pip install pytest-html
-
-echo.
-echo ==============================
-echo Instalando Scoop automaticamente
-echo ==============================
-where scoop >nul 2>nul
+echo Installing Chromium from Playwright...
+python -m playwright install chromium
 if errorlevel 1 (
-    where powershell >nul 2>nul
-    if errorlevel 1 (
-        echo PowerShell nao encontrado. Nao foi possivel instalar Scoop.
-        pause
-        exit /b 1
-    )
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force; irm get.scoop.sh | iex"
-    if errorlevel 1 (
-        echo Falha ao instalar Scoop.
-        pause
-        exit /b 1
-    )
+    echo ERRO: failed to install Playwright Chromium.
+    pause
+    exit /b 1
 )
 
-echo.
-echo ==============================
-echo Instalando CLI do Allure
-echo ==============================
 where allure >nul 2>nul
 if errorlevel 1 (
     where scoop >nul 2>nul
     if errorlevel 1 (
-        echo Scoop nao encontrado para instalar a CLI do Allure.
-        pause
-        exit /b 1
+        echo Scoop not found. Installing Scoop...
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force; irm get.scoop.sh | iex"
+        if errorlevel 1 (
+            echo ERRO: failed to install Scoop.
+            pause
+            exit /b 1
+        )
     )
+    echo Installing Allure CLI...
     scoop install allure
     if errorlevel 1 (
-        echo Falha ao instalar a CLI do Allure.
+        echo ERRO: failed to install Allure CLI.
         pause
         exit /b 1
     )
 )
 
-echo.
-echo ==============================
-echo Instalando navegadores do Playwright
-echo ==============================
-python -m playwright install chromium
-if errorlevel 1 (
-    echo Falha ao instalar browsers do Playwright.
-    pause
-    exit /b 1
-)
-
-echo.
-echo ==============================
-echo Executando testes com pytest
-echo ==============================
+echo Running tests...
 rd /s /q "%ALLURE_RESULTS%" 2>nul
 rd /s /q "%ALLURE_REPORT%" 2>nul
 python -m pytest --alluredir=%ALLURE_RESULTS% --headed
 set TEST_EXIT=%ERRORLEVEL%
 
-echo.
-echo ==============================
-echo Gerando Allure Report
-echo ==============================
 where allure >nul 2>nul
 if errorlevel 1 (
-    echo Allure CLI nao encontrado. Verifique a instalacao do Scoop/Allure.
+    echo Allure CLI not found. Skipping report generation.
 ) else (
     allure generate %ALLURE_RESULTS% -o %ALLURE_REPORT% --clean
     if errorlevel 1 (
-        echo Falha ao gerar o Allure Report.
+        echo ERRO: failed to generate Allure report.
     ) else (
-        allure open %ALLURE_REPORT%
+        start "" allure open %ALLURE_REPORT%
     )
 )
 
@@ -178,9 +148,5 @@ if not "%TEST_EXIT%"=="0" (
     exit /b %TEST_EXIT%
 )
 
-echo.
-echo ==============================
-echo Processo concluido com sucesso
-echo ==============================
 pause
 endlocal

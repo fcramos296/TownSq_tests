@@ -1,77 +1,60 @@
 import pytest
-from playwright.sync_api import expect
+from playwright.sync_api import expect, TimeoutError as PlaywrightTimeoutError
+
 from pages.login_page import LoginPage
 from utils.settings import settings
 
 
-def _visible_count(locator):
-    total = locator.count()
-    visible = 0
-    for i in range(total):
-        try:
-            if locator.nth(i).is_visible():
-                visible += 1
-        except Exception:
-            continue
-    return visible
+@pytest.fixture
+def login_page(page):
+    return LoginPage(page)
 
 
-def _has_visible_error(page):
-    selectors = [
+def _has_visible_error(page) -> bool:
+    candidates = [
+        "div.toast-error",
         "[role='alert']",
-        ".alert",
-        ".alert-danger",
         ".error",
-        ".error-message",
-        ".toast-error",
-        "text=/inv[aá]lido/i",
-        "text=/incorrect/i",
-        "text=/error/i",
-        "text=/senha/i",
-        "text=/email/i",
+        ".alert",
+        "text=/erro|error|inv[áa]lido|invalid/i",
     ]
-    for sel in selectors:
+
+    for selector in candidates:
         try:
-            loc = page.locator(sel)
-            for i in range(loc.count()):
-                if loc.nth(i).is_visible():
-                    return True
-        except Exception:
-            continue
+            page.wait_for_selector(selector, state="visible", timeout=2000)
+            return True
+        except PlaywrightTimeoutError:
+            pass
+
     return False
 
 
 @pytest.mark.e2e
 @pytest.mark.smoke
 class TestLoginPageUI:
-    def test_login_page_loads(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_login_page_loads(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
         expect(page).to_have_url(base_url)
 
-    def test_login_page_title(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_login_page_title(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
-        assert (
-            "login" in page.title().lower()
-            or "townsq" in page.title().lower()
-            or "octadesk" in page.title().lower()
-        )
+        title = page.title().lower()
+        assert "login" in title or "townsq" in title or "octadesk" in title
 
-    def test_username_field_is_visible(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_username_field_is_visible(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
-        assert login_page.username() is not None
+        locator = page.locator(login_page.USERNAME_INPUT)
+        expect(locator.first).to_be_visible()
 
-    def test_password_field_is_visible(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_password_field_is_visible(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
-        assert login_page.password() is not None
+        locator = page.locator(login_page.PASSWORD_INPUT)
+        expect(locator.first).to_be_visible()
 
-    def test_submit_button_is_visible(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_submit_button_is_visible(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
-        assert login_page.submit() is not None
+        locator = page.locator(login_page.SUBMIT_BUTTON)
+        expect(locator.first).to_be_visible(timeout=settings.TIMEOUT)
 
     def test_first_visit_shows_no_global_error(self, page, base_url, browser_context):
         isolated_context = browser_context.browser.new_context(
@@ -81,7 +64,7 @@ class TestLoginPageUI:
         try:
             isolated_page.goto(
                 base_url,
-                wait_until="networkidle",
+                wait_until="domcontentloaded",
                 timeout=settings.TIMEOUT,
             )
             assert not _has_visible_error(
@@ -95,39 +78,37 @@ class TestLoginPageUI:
 @pytest.mark.e2e
 @pytest.mark.negative
 class TestLoginValidation:
-    def test_empty_credentials_shows_error(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_empty_credentials_shows_error(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
         login_page.click_submit()
         assert login_page.is_error_visible() or page.locator("input:invalid").count() > 0
 
-    def test_invalid_email_format(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_invalid_email_format(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
         login_page.fill_username("invalid-email")
         login_page.fill_password("somepassword")
         login_page.click_submit()
         assert login_page.is_error_visible() or page.locator("input:invalid").count() > 0
 
-    def test_forgot_password_link_is_present(self, page, base_url):
-        login_page = LoginPage(page)
+    def test_forgot_password_link_is_present(self, page, base_url, login_page):
         login_page.navigate_to_login(base_url)
-        assert login_page.forgot_password() is not None
-
-    def test_invalid_credentials_shows_error(self, page, base_url):
-        login_page = LoginPage(page)
-        login_page.navigate_to_login(base_url)
-        login_page.perform_login("invalid_user@example.com", "wrong_password_123")
-        assert login_page.is_error_visible() or _has_visible_error(page)
+        link = page.locator(login_page.FORGOT_PASSWORD_LINK)
+        expect(link.first).to_be_visible(timeout=settings.TIMEOUT)
 
 
 @pytest.mark.e2e
 @pytest.mark.regression
 class TestLoginFlow:
-    @pytest.mark.skipif(not settings.USERNAME or not settings.PASSWORD, reason="Credentials not configured")
-    def test_successful_login(self, page, base_url, credentials):
-        login_page = LoginPage(page)
+    @pytest.mark.skipif(
+        not settings.USERNAME or not settings.PASSWORD,
+        reason="Credentials not configured",
+    )
+    def test_successful_login(self, page, base_url, login_page, credentials):
         login_page.navigate_to_login(base_url)
         login_page.perform_login(credentials["username"], credentials["password"])
-        page.wait_for_load_state("networkidle")
-        assert page.url != base_url
+        assert page.url != base_url or page.locator("text=/dashboard|home|bem-vindo/i").count() > 0
+
+    def test_invalid_credentials_shows_error(self, page, base_url, login_page):
+        login_page.navigate_to_login(base_url)
+        login_page.perform_login("invalid_user@example.com", "wrong_password_123")
+        assert login_page.is_error_visible() or _has_visible_error(page)

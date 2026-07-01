@@ -1,31 +1,22 @@
-from playwright.sync_api import Page, expect
+from utils.settings import settings
 
 
 class BasePage:
-    def __init__(self, page: Page):
+    def __init__(self, page):
         self.page = page
-        self.timeout = 30000
 
-    def navigate(self, url: str):
-        self.page.goto(url, timeout=self.timeout)
+    def navigate(self, url, wait_until="domcontentloaded"):
+        self.page.goto(url, wait_until=wait_until, timeout=settings.TIMEOUT)
+        self.page.wait_for_load_state(wait_until)
 
-    def get_element(self, selector: str):
-        return self.page.locator(selector)
+    def click(self, locator):
+        locator.wait_for(state="visible", timeout=settings.TIMEOUT)
+        locator.click()
 
-    def click(self, selector: str):
-        self.get_element(selector).click(timeout=self.timeout)
+    def fill(self, locator, value):
+        locator.wait_for(state="visible", timeout=settings.TIMEOUT)
+        locator.fill(value)
 
-    def fill(self, selector: str, value: str):
-        self.get_element(selector).fill(value, timeout=self.timeout)
-
-    def wait_for_element(self, selector: str):
-        self.page.wait_for_selector(selector, timeout=self.timeout)
-
-    def is_visible(self, selector: str) -> bool:
-        return self.get_element(selector).is_visible()
-
-    def get_text(self, selector: str) -> str:
-        return self.get_element(selector).inner_text(timeout=self.timeout)
-
-    def expect_url(self, url: str):
-        expect(self.page).to_have_url(url, timeout=self.timeout)
+    def wait_visible(self, locator, timeout=None):
+        locator.wait_for(state="visible", timeout=timeout or settings.TIMEOUT)
+        return locator
