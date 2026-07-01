@@ -23,8 +23,6 @@ townsq_qa_tests/
 │       └── test_login_e2e.py
 ├── utils/
 │   └── settings.py
-├── allure-results/
-├── allure-report/
 ├── conftest.py
 ├── pytest.ini
 ├── requirements.txt
