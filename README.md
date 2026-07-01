@@ -54,7 +54,7 @@ O script realiza automaticamente as seguintes etapas:
 - Executa os testes com `pytest`.
 - Gera o report do Allure e o exibe ao final da execução.
 
-Configuração manual (Linux, Mac)
+## Configuração manual (Linux, Mac)
 
 Crie um arquivo .env na raíz do projeto e configure as credenciais de acesso
 
