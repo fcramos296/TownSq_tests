@@ -54,14 +54,20 @@ O script realiza automaticamente as seguintes etapas:
 - Executa os testes com `pytest`.
 - Gera o report do Allure e o exibe ao final da execução.
 
+Configuração manual (Linux, Mac)
+
+Crie um arquivo .env na raíz do projeto e configure as credenciais de acesso
+
+BASE_URL=https://townsq.octadesk.com/login
+USERNAME=example@teste.com
+PASSWORD=examplepassword
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate.bat
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m playwright install chromium
 ```
-
-3. Configure as credenciais no arquivo `.env` (criado automaticamente pelo setup.bat).
 
 ## Execucao
 
