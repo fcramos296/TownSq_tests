@@ -41,7 +41,6 @@ Este projeto valida a experiência da tela de login com testes E2E cobrindo carr
 - Git opcional, caso queira clonar o repositório.
 - Windows para execução automatizada com `setup.bat`.
 - Linux ou macOS para configuração manual.
-- Acesso à internet para instalação de dependências, Playwright e Allure CLI.
 - Credenciais válidas de teste para executar o cenário de login positivo.
 
 ## Configuração de ambiente
