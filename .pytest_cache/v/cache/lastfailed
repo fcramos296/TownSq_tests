@@ -1,4 +1,0 @@
-{
-  "tests/e2e/test_login_e2e.py::TestLoginPageUI::test_first_visit_shows_no_global_error": true,
-  "tests/e2e/test_login_e2e.py::TestLoginFlow::test_successful_login": true
-}
